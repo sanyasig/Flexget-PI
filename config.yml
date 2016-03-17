@@ -1,0 +1,171 @@
+templates:
+  global:
+    regexp:
+      reject:
+        - SWESUB
+        - FRENCH
+        - RUS
+        - trailer
+        - SWE
+        - SCREENER
+        - CAM
+  transmissionrpc:
+    transmission:
+      username: 'transmission'
+      password: 'transmission'
+      path: /home/nani/Movies
+      magnetization_timeout: 30
+      main_file_only: yes
+      skip_files:
+        - '*.nfo'
+        - '*.sfv'
+        - '*.[sS]ample'
+        - '*.txt'
+      include_subs: no
+    #quality: 720p
+
+  trakt_sd_movies_input:
+    trakt_list:
+      username: 'sanyasig'
+      account: 'sanyasig'
+      list: Test Movies
+      type: movies
+
+  discoverMovies:
+    movie_queue: accept
+    tmdb_lookup: yes
+    require_field:
+      - tmdb_name
+      - tmdb_year
+    discover:
+      what:
+        - emit_movie_queue: yes
+      from:
+        - kat:
+            category: movies
+            verified: yes
+        - piratebay:
+            category: "highres movies"
+            sort_by: seeds
+        - torrentz: verified
+      interval: 4 hours
+    #quality: 720p
+
+  discoverSeries:
+    configure_series:
+      from:
+        trakt_list:
+          username: 'sanyasig'
+          account: 'sanyasig'
+          list: Series Following
+          type: shows
+          strip_dates: yes
+      settings:
+        identified_by: ep
+    exists_series:
+      - /home/nani/
+      - /home/nani/
+    discover:
+      what:
+        - emit_series:
+            from_start: yes
+      from:
+        - piratebay: yes
+        - isohunt: tv
+        - torrentz: verified
+        #- search_rss: http://torrentz.eu/feed?verified&q={{ search_term }}
+      interval: 1 hours
+    limit_new: 5
+    thetvdb_lookup: yes
+    require_field:
+      - tvdb_series_name
+      - series_season
+      - series_episode
+    transmission:
+      username: 'transmission'
+      password: 'transmission'
+      path: /home/nani/Downloading/Series/{{ tvdb_series_name }}/S{{ series_season|pad(2)}}E{{ series_episode|pad(2) }}
+      magnetization_timeout: 30
+      content_filename: "{{ tvdb_series_name }} - S{{ series_season|pad(2)}}E{{ series_episode|pad(2) }}"
+      main_file_only: yes
+      skip_files:
+        - '*.nfo'
+        - '*.sfv'
+        - '*.[sS]ample'
+        - '*.txt'
+      include_subs: no
+tasks:
+  MovieQueue:
+    priority: 1
+    template: no_global
+    no_entries_ok: yes
+    sort_by:
+      reverse: yes
+    exists_movie:
+      path: /home/nani/Movies
+      type: files
+      #lookup: imdb
+    limit_new: 5
+    accept_all: yes
+    movie_queue: add
+    trakt_list:
+      username: 'sanyasig'
+      account: 'sanyasig'
+      list: Test Movies
+      type: movies
+
+
+  MoviesSearch720:
+    priority: 2
+    template:
+      - discoverMovies
+      - transmissionrpc
+    quality: 720p+
+
+  # MoviesSearch720pandhdtv:
+  #   priority: 3
+  #   template: discoverMovies
+  #   quality: 720p+ hdtv+
+  # MoviesSearch720p:
+  #   priority: 4
+  #   template: discoverMovies
+  #   quality: 720p+
+  # MoviesSearchhdtv:
+  #   priority: 5
+  #   template: discoverMovies
+  #   quality: hdtv+
+  # MoviesSearchOther:
+  #   priority: 6
+  #   template: discoverMovies
+  #   quality: 480p+
+
+  SeriesQueue:
+    priority: 7
+    trakt_emit:
+      username: 'sanyasig'
+      account: 'sanyasig'
+      list: Series Following
+      context: watched
+      position: next
+    accept_all: yes
+    set_series_begin: yes
+  # SeriesSearch1080pandhdtv:
+  #   priority: 8
+  #   template: discoverSeries
+  #   quality: 1080p+ hdtv+
+  # SeriesSearch720pandhdtv:
+  #   priority: 9
+  #   template: discoverSeries
+  #   quality: 720p+ hdtv+
+  # SeriesSearch720p:
+  #   priority: 10
+  #   template: discoverSeries
+  #   quality: 720p+
+  SeriesSearchhdtv:
+    priority: 11
+    template: discoverSeries
+    quality: hdtv+
+  # SeriesSearchOther:
+  #   priority: 12
+  #   template: discoverSeries
+  #   quality: 480p+
